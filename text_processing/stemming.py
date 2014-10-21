@@ -1,0 +1,435 @@
+#!/usr/bin/python
+# -*- coding: cp1253 -*-
+##еККГМИЙЭ аМОИВТЭ пАМЕПИСТчЛИО - пЯЭЦЯАЛЛА сПОУДЧМ пКГЯОЖОЯИЙчР
+##пТУВИАЙч еЯЦАСъА: HOU-CS-UGP-2013-18
+##"аКЦЭЯИХЛОИ аПОДОТИЙчР еПИКОЦчР вАЯАЙТГЯИСТИЙЧМ ЦИА йАТГЦОЯИОПОъГСГ йЕИЛщМОУ СТГМ еККГМИЙч цКЧССА"
+##аКщНАМДЯОР йАКАПЭДГР
+##еПИБКщПЫМ йАХГЦГТчР: сПЩЯОР кУЙОХАМэСГР, тЛчЛА лГВАМИЙЧМ г/у & пКГЯОЖОЯИЙчР, пАМЕПИСТчЛИО пэТЯАР
+
+##Implementation in Python of the greek stemmer presented by Giorgios Ntais during his master thesis with title
+##"Development of a Stemmer for the Greek Language" in the Department of Computer and Systems Sciences
+##at Stockholm's University / Royal Institute of Technology.
+
+##The system takes as input a word and removes its inflexional suffix according to a rule based algorithm.
+##The algorithm follows the known Porter algorithm for the English language and it is developed according to the
+##grammatical rules of the Modern Greek language.
+
+# greg, july 2014: Function stem is used to stem a word (in greek). With the function stemming_doc you can also stem a text.
+# Assumptions:
+# 1) all letters are capital,
+# 2) they include no accent and no punctuation points.
+
+__author__ = 'greg'
+
+VOWELS = ['а', 'е', 'г', 'и', 'о', 'у', 'ы', '╒', '╦', '╧', '╨', '╪', '╬', '©', 'з', 'ш']
+
+import unicodedata as ud
+
+
+def ends_with(word, suffix):
+    suf2 = get_decoded_input(suffix)
+    return ud.normalize('NFC', word[len(word) - len(suffix):]) == ud.normalize('NFC', suf2)
+
+def stem(word):
+    done = len(word) <= 3
+
+    ##rule-set  1
+    ##циациадес->циац, оладес->олад
+    if not done:
+        for suffix in ['иадес', 'адес', 'адым']:
+            #print len(word)
+            #print len(suffix)
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                remaining_part_does_not_end_on = True
+                for s in ['ой', 'лал', 'лам', 'лпалп', 'патея', 'циац', 'мтамт', 'йуя', 'хеи', 'пехея']:
+                    if ends_with(word, s):
+                        remaining_part_does_not_end_on = False
+                        break
+                if remaining_part_does_not_end_on:
+                    word = word + get_decoded_input('ад')
+                done = True
+                break
+
+    ##rule-set  2
+    ##йажедес->йаж, цгпедым->цгпед
+    if not done:
+        for suffix in ['едес', 'едым']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                for s in ['оп', 'ип', 'елп', 'уп', 'цгп', 'дап', 'йяасп', 'лик']:
+                    if ends_with(word, s):
+                        word = word + get_decoded_input('ед')
+                        break
+                done = True
+                break
+
+    ##rule-set  3
+    ##паппоудым->папп, аяйоудес->аяйоуд
+    if not done:
+        for suffix in ['оудес', 'оудым']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                for s in ['аяй', 'йакиай', 'петак', 'кив', 'пкен', 'сй', 'с', 'жк', 'жя', 'бек', 'коук', 'вм', 'сп', 'тяац', 'же']:
+                    if ends_with(word, s):
+                        word = word + get_decoded_input('оуд')
+                        break
+                done = True
+                break
+
+    ##rule-set  4
+    ##упохесеыс->упохес, хеым->хе
+    if not done:
+        for suffix in ['еыс', 'еым']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                for s in ['х', 'д', 'ек', 'цак', 'м', 'п', 'ид', 'пая']:
+                    if ends_with(word, s):
+                        word = word + get_decoded_input('е')
+                        break
+                done = True
+                break
+
+    ##rule-set  5
+    ##паидиа->паид, текеиоу->текеи
+    if not done:
+        for suffix in ['иа', 'иоу', 'иым']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                for s in VOWELS:
+                    if ends_with(word, s):
+                        word = word + get_decoded_input('и')
+                        break
+                done = True
+                break
+
+    ##rule-set  6
+    ##фгкиаяийо->фгкиая, ацяоийос->ацяоий
+    if not done:
+        for suffix in ['ийа', 'ийоу', 'ийым', 'ийос', 'ийо', 'ийг']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['ак', 'ад', 'емд', 'алам', 'алловак', 'гх', 'амгх', 'амтид', 'жус', 'бяыл', 'цея', 'еныд', 'йакп',
+                            'йакким', 'йатад', 'лоук', 'лпам', 'лпациат', 'лпок', 'лпос', 'мит', 'ний', 'сумолгк', 'петс', 'питс',
+                            'пийамт', 'пкиатс', 'помт', 'постекм', 'пяытод', 'сеят', 'сумад', 'тсал', 'упод', 'жиком', 'жукод',
+                            'вас']:
+                    word = word + get_decoded_input('ий')
+                else:
+                    for s in VOWELS:
+                        if ends_with(word, s):
+                            word = word + get_decoded_input('ий')
+                            break
+                done = True
+                break
+
+    ##rule-set  7
+    ##ацапацале->ацап, амапале->амапал
+    if not done:
+        if word == 'ацале': word = 2*word
+        for suffix in ['гхгйале', 'ацале', 'гсале', 'оусале', 'гйале']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['ж']:
+                    word = word + get_decoded_input('ацал')
+                done = True
+                break
+        if not done and ends_with(word, 'але'):
+            word = word[:len(word) - len('але')]
+            if word in ['амап', 'апох', 'апой', 'апост', 'боуб', 'нех', 'оук', 'пех', 'пийя', 'пот', 'сив', 'в']:
+                word = word + get_decoded_input('ал')
+            done = True
+
+    ##rule-set  8
+    ##ацапгсале->ацап, тяацаме->тяацам
+    if not done:
+        for suffix in ['иоумтаме', 'иомтаме', 'оумтаме', 'гхгйаме', 'оусаме', 'иотаме', 'омтаме', 'ацаме', 'гсаме',
+                       'отаме', 'гйаме']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['тя', 'тс', 'ж']:
+                    word = word + get_decoded_input('ацам')
+                done = True
+                break
+        if not done and ends_with(word, 'аме'):
+            word = word[:len(word) - len('але')]
+            if word in ['бетея', 'боукй', 'бяавл', 'ц', 'дяадоул', 'х', 'йакпоуф', 'йастек', 'йоялоя', 'каопк', 'лыалех', 'л',
+                        'лоусоукл', 'м', 'оук', 'п', 'пекей', 'пк', 'покис', 'пояток', 'саяайатс', 'соукт', 'тсаякат', 'ояж',
+                        'тсицц', 'тсоп', 'жытостеж', 'в', 'ьувопк', 'ац', 'ояж', 'цак', 'цея', 'дей', 'дипк', 'алеяийам', 'оуя',
+                        'пих', 'поуяит', 'с', 'фымт', 'ий', 'йаст', 'йоп', 'кив', 'коухгя', 'лаимт', 'лек', 'сиц', 'сп', 'стец',
+                        'тяац', 'тсац', 'ж', 'ея', 'адап', 'ахицц', 'алгв', 'амий', 'амояц', 'апгц', 'апих', 'атсицц', 'бас',
+                        'басй', 'бахуцак', 'биолгв', 'бяавуй', 'диат', 'диаж', 'емояц', 'хус', 'йапмобиолгв', 'йатацак', 'йкиб',
+                        'йоикаяж', 'киб', 'лецкобиолгв', 'лийяобиолгв', 'мтаб', 'нгяойкиб', 'окицодал', 'окоцак', 'пемтаяж',
+                        'пеягж', 'пеяитя', 'пкат', 'покудап', 'покулгв', 'стеж', 'таб', 'тет', 'упеягж', 'упойоп', 'валгкодап',
+                        'ьгкотаб']:
+                word = word + get_decoded_input('ам')
+            else:
+                for s in VOWELS:
+                    if ends_with(word, s):
+                        word = word + get_decoded_input('ам')
+                        break
+            done = True
+
+    ##rule-set  9
+    ##ацапгсете->ацап, бемете->бемет
+    if not done:
+        if ends_with(word, 'гсете'):
+            word = word[:len(word) - len('гсете')]
+            done = True
+        elif ends_with(word, 'ете'):
+            word = word[:len(word) - len('ете')]
+            if word in ['абая', 'бем', 'емая', 'абя', 'ад', 'ах', 'ам', 'апк', 'баяом', 'мтя', 'сй', 'йоп', 'лпоя', 'миж', 'пац',
+                        'паяайак', 'сеяп', 'сйек', 'суяж', 'той', 'у', 'д', 'ел', 'хаяя', 'х']:
+                word = word + get_decoded_input('ет')
+            else:
+                for s in ['од', 'аия', 'жоя', 'тах', 'диах', 'св', 'емд', 'еуя', 'тих', 'упеях', 'яах', 'емх', 'яох', 'сх', 'пуя',
+                          'аим', 'сумд', 'сум', 'сумх', 'выя', 'пом', 'бя', 'йах', 'еух', 'ейх', 'мет', 'яом', 'аяй', 'бая', 'бок',
+                          'ыжек'] + VOWELS:
+                    if ends_with(word, s):
+                        word = word + get_decoded_input('ет')
+                        break
+            done = True
+
+    ##rule-set 10
+    ##ацапымтас->ацап, неможымтас->неможым
+    if not done:
+        for suffix in ['омтас', 'ымтас']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['аяв']:
+                    word = word + get_decoded_input('омт')
+                elif word in ['немож', 'йяе']:
+                    word = word + get_decoded_input('ымт')
+                done = True
+                break
+
+    ##rule-set 11
+    ##ацапиоласте->ацап, омоласте->омоласт
+    if not done:
+        for suffix in ['иоласте', 'оласте']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['ом']:
+                    word = word + get_decoded_input('оласт')
+                done = True
+                break
+
+    ##rule-set 12
+    ##ацапиесте->ацап, пиесте->пиест
+    if not done:
+        for suffix in ['иесте']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['п', 'ап', 'сулп', 'асулп', 'йатап', 'леталж']:
+                    word = word + get_decoded_input('иест')
+                done = True
+                break
+    if not done:
+        for suffix in ['есте']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['ак', 'ая', 'ейтек', 'ф', 'л', 'н', 'паяайак', 'ая', 'пяо', 'мис']:
+                    word = word + get_decoded_input('ест')
+                done = True
+                break
+
+    ##rule-set 13
+    ##втистгйе->втист, диахгйес->диахгй
+    if not done:
+        for suffix in ['гхгйа', 'гхгйес', 'гхгйе']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                done = True
+                break
+    if not done:
+        for suffix in ['гйа', 'гйес', 'гйе']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['диах', 'х', 'паяайатах', 'пяосх', 'сумх']:
+                    word = word + get_decoded_input('гй')
+                else:
+                    for suffix in ['сйык', 'сйоук', 'маях', 'сж', 'ох', 'пих']:
+                        if ends_with(word, suffix):
+                            word = word + get_decoded_input('гй')
+                            break
+                done = True
+                break
+
+    ##rule-set 14
+    ##втупоусес->втуп, ледоусес->ледоус
+    if not done:
+        for suffix in ['оуса', 'оусес', 'оусе']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['жаялай', 'вад', 'ацй', 'амаяя', 'бяол', 'ейкип', 'калпид', 'кев', 'л', 'пат', 'я', 'к', 'лед', 'лесаф',
+                            'употеим', 'ал', 'аих', 'амгй', 'деспоф', 'емдиажея', 'де', 'деутеяеу', 'йахаяеу', 'пке', 'тса']:
+                    word = word + get_decoded_input('оус')
+                else:
+                    for s in ['подая', 'бкеп', 'памтав', 'жяуд', 'ламтик', 'лакк', 'йулат', 'кав', 'кгц', 'жац', 'ол', 'пяыт'] + VOWELS:
+                        if ends_with(word, s):
+                            word = word + get_decoded_input('оус')
+                            break
+                done = True
+                break
+
+    ##rule-set 15
+    #йоккацес->йокк, абастаца->абаст
+    if not done:
+        for suffix in ['аца', 'ацес', 'аце']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['абаст', 'покуж', 'адгж', 'палж', 'я', 'асп', 'аж', 'алак', 'алакки', 'амуст', 'апея', 'аспая', 'авая',
+                            'деябем', 'дяосоп', 'неж', 'меоп', 'молот', 'окоп', 'олот', 'пяост', 'пяосыпоп', 'сулп', 'сумт', 'т',
+                            'упот', 'вая', 'аеип', 'аилост', 'амуп', 'апот', 'аятип', 'диат', 'ем', 'епит', 'йяойакоп', 'сидгяоп',
+                            'к', 'мау', 'оукал', 'оуя', 'п', 'тя', 'л']:
+                    word = word + get_decoded_input('ац')
+                else:
+                    for s in ['ож', 'пек', 'воят', 'сж', 'яп', 'жя', 'пя', 'ков', 'слгм']:
+                        # ажаияехгйе: 'кк'
+                        if ends_with(word, s):
+                            if not word in ['ьож', 'мауков']:
+                                word = word + get_decoded_input('ац')
+                            break
+                done = True
+                break
+
+    ##rule-set 16
+    ##ацапгсе->ацап, мгсоу->мгс
+    if not done:
+        for suffix in ['гсе', 'гсоу', 'гса']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['м', 'веясом', 'дыдейам', 'еяглом', 'лецаком', 'ептам', 'ацахом']:
+                    word = word + get_decoded_input('гс')
+                done = True
+                break
+
+    ##rule-set 17
+    ##ацапгсте->ацап, сбгсте->сбгст
+    if not done:
+        for suffix in ['гсте']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['асб', 'сб', 'авя', 'вя', 'апк', 'аеилм', 'дусвя', 'еувя', 'йоимовя', 'пакиль']:
+                    word = word + get_decoded_input('гст')
+                done = True
+                break
+
+    ##rule-set 18
+    ##ацапоуме->ацап, спиоуме->спиоум
+    if not done:
+        for suffix in ['оуме', 'гсоуме', 'гхоуме']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['м', 'я', 'спи', 'стяаболоутс', 'йайолоутс', 'еным']:
+                    word = word + get_decoded_input('OYN')
+                done = True
+                break
+
+    ##rule-set 19
+    ##ацапоуле->ацап, жоуле->жоул
+    if not done:
+        for suffix in ['оуле', 'гсоуле', 'гхоуле']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                if word in ['паяасоус', 'ж', 'в', 'ыяиопк', 'аф', 'аккосоус', 'асоус']:
+                    word = word + get_decoded_input('оул')
+                done = True
+                break
+
+    ##rule-set 20
+    ##йулата->йул, выяато->выяат
+    if not done:
+        for suffix in ['лата', 'латым', 'латос']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                word = word + get_decoded_input('л')
+                done = True
+                break
+
+    ##rule-set 21
+    if not done:
+        for suffix in ['иомтоусам', 'иоуласте', 'иоластам', 'иосастам', 'омтоусам', 'иосасте', 'иеласте', 'иесасте', 'иолоума',
+                       'иосоума', 'иоумтаи', 'иоумтам', 'гхгйате', 'оластам', 'осастам', 'оуласте', 'иолоум', 'иомтам', 'иосоум',
+                       'гхеите', 'гхгйам', 'олоума', 'осасте', 'осоума', 'оумтаи', 'оумтам', 'оусате',  'ацате', 'еитаи', 'иелаи',
+                       'иетаи', 'иесаи', 'иотам', 'иоула', 'гхеис', 'гхоум', 'гйате', 'гсате', 'гсоум', 'олоум',  'омтаи',
+                       'омтам', 'осоум', 'оулаи', 'оусам',  'ацам', 'алаи', 'асаи', 'атаи', 'еите', 'есаи', 'етаи', 'гдес',
+                       'гдым', 'гхеи', 'гйам', 'гсам', 'гсеи', 'гсес', 'олаи', 'отам',  'аеи',  'еис',  'гхы',  'гсы', 'оум',
+                       'оус',  'ам', 'ас', 'аы', 'еи', 'ес', 'гс', 'ои', 'ом', 'ос', 'оу', 'ус', 'ым', 'ыс', 'а', 'е', 'и', 'г',
+                       'о',  'у', 'ы']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                break
+
+    ##rule-set 22
+    ##пкгсиестатос->пкуси, лецакутеяг->лецак, йомтотеяо->йомт
+    if not done:
+        for suffix in ['естея', 'естат', 'отея', 'отат', 'утея', 'утат', 'ытея', 'ытат']:
+            if ends_with(word, suffix):
+                word = word[:len(word) - len(suffix)]
+                break
+
+    return word
+
+
+# greg, 11 July 2014. The following code is written by me:
+import sys, os.path
+
+
+def get_conversion_pool():
+        poolGR = u"АБЦДЕФГХИЙКЛМНОПЯСТУЖВЬЫабцдефгхийклмнопястужвьыРэщчъЗюЭЩШЮЧ╒╦╧╨з╪╬ш©"
+        poolGL =  "abgdezh8iklmn3oprstufx4wABGDEZH8IKLMN3OPRSTYFX4WsaehiiiouuuwAEHIIOYYW"
+        return dict(zip(poolGR, poolGL))
+
+
+def get_decoded_input(line):
+        try:
+                line = line.decode("utf-8")
+        except UnicodeDecodeError:
+                try:
+                        line = line.decode("cp1253")
+                except UnicodeDecodeError:
+                        line = line.decode("iso8859-7")
+        return line
+
+
+def convert(datasource):
+        pool = get_conversion_pool()
+        for line in datasource:
+                line = get_decoded_input(line)
+                output_line = []
+                for character in line:
+                        if pool.has_key(character):
+                                output_line.append(pool[character])
+                        else:
+                                output_line.append(character)
+                #sys.stdout.write("".join(output_line))
+                #sys.stdout.flush()
+        return output_line
+
+
+def stemming_doc(src, outdir1):
+    # This can be used for stemming a whole document. It first opens the doc (input, output) and then reads from input,
+    # stems and then writes in output.
+    fr = open(src,'r')
+    f = open(outdir1, 'w')
+    #output_line=convert(fr)
+    for word in fr.read().split():
+        #print get_decoded_input(word)
+        #print type(word)
+        ww = get_decoded_input(word)
+        ww = ww.upper()
+        #print stem(ww.encode('utf-8'))
+        res = stem(ww)
+        print res
+        print >> f, res.encode('utf-8')
+    f.close()
+
+#stemming_doc('words.txt', 'out_greg.txt')
+if __name__ == '__main__':
+	stemming_doc()
+
+
+
+
+
+
