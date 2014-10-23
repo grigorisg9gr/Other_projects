@@ -6,5 +6,6 @@ The system accepts two different text articles and extract several similarity me
 	4) It extracts the similarity measures.
  There is optionally the function create_lemmas in case there is no predefined dictionary.
 
+There is a sample file in text_files/ with a pair of news articles. You can add more pairs for comparing them. To run the code, you need to run the parse_all file. 
 
 For any issues or questions, contact me in grigoris.chrysos@gmail.com
