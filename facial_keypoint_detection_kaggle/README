@@ -1,0 +1,17 @@
+The purpose of the code is for competing in the Kaggle competition of "Facial Keypoint Detection". 
+The instructions below describe a step by step process how to format the train/test data and how to run the Deformable Part Models (voc-release 5). 
+
+1. Download train and test files and unzip them. 
+2. In a terminal run: 
+	a. cat training.csv | sed 'y/ /,/' > training_allcomma.csv
+	b. cat test.csv | sed 'y/ /,/' > test1.csv
+3. Delete the first row from both files.
+4. Move the files training_allcomma.csv, test1.csv, IdLookupTable.csv in the data/ folder. Note: All these files can be found in the kaggle site. 
+
+
+For running DPM: 
+1. In DPM folder, edit voc_config(): change the var BASE_DIR in the home directory that DPM code is. 
+2. Run demo_DPM to run the DPM code. If you do not wish to re-train the models from scratch, ask for the trained models. 
+
+
+For any issues or questions, contact me in grigoris.chrysos@gmail.com
